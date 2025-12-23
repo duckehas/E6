@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(to bottom,#1e1f29,#3a3c4a);
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    overflow:auto;
+}
+canvas#snow{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+}
+.admin-card{
+    background:rgba(44,47,58,0.85);
+    backdrop-filter:blur(12px);
+    border-radius:16px;
+    padding:20px;
+    width:90%;
+    max-width:900px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+    z-index:1;
+}
+h2{text-align:center;margin-bottom:15px;}
+table{width:100%;border-collapse:collapse;font-size:.85em;}
+th,td{border:1px solid #5865F2;padding:6px;text-align:center;}
+th{background:rgba(88,101,242,.35);}
+tr:nth-child(even){background:rgba(255,255,255,.05);}
+.status-active{color:#6dff8b;}
+.status-suspended{color:#ffd86d;}
+.status-banned{color:#ff6d6d;}
+button{
+    padding:4px 8px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+    margin:1px;
+    font-size:.75em;
+}
+.kick{background:#7a85e5;}
+.suspend{background:#ffd86d;color:#000;}
+.ban{background:#ff6d6d;}
+.unban{background:#6dff8b;color:#000;}
+.maint-toggle{background:#5865F2;color:#fff;width:180px;margin:10px auto;display:block;}
+button:hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<canvas id="snow"></canvas>
+
+<div class="admin-card">
+    <h2>Admin Panel</h2>
+    <div id="tableWrap"></div>
+    <button class="maint-toggle" id="toggleMaintBtn"></button>
+</div>
+
+<script>
+// ---------- SNOW ----------
+const canvas=document.getElementById('snow');
+const ctx=canvas.getContext('2d');
+let w=canvas.width=innerWidth,h=canvas.height=innerHeight;
+window.addEventListener('resize',()=>{w=canvas.width=innerWidth;h=canvas.height=innerHeight;});
+class Flake{constructor(s){this.s=s;this.r();} r(){this.x=Math.random()*w;this.y=Math.random()*h;this.rn=(Math.random()*2+1)*this.s;this.sy=Math.random()*1+.5;this.sx=Math.random()-.5;} u(){this.y+=this.sy*this.s;this.x+=this.sx;if(this.y>h)this.y=0;} d(){ctx.beginPath();ctx.fillStyle="rgba(255,255,255,.6)";ctx.arc(this.x,this.y,this.rn,0,Math.PI*2);ctx.fill();}}
+let flakes=[...Array(100)].map(()=>new Flake(Math.random()*1.5+.5));
+(function anim(){ctx.clearRect(0,0,w,h);flakes.forEach(f=>{f.u();f.d();});requestAnimationFrame(anim);})();
+
+// ---------- ADMIN LOGIC ----------
+let users = JSON.parse(localStorage.getItem("users")||"[]");
+const tableWrap=document.getElementById("tableWrap");
+
+function save(){localStorage.setItem("users",JSON.stringify(users));render();}
+
+function kick(username){localStorage.removeItem("currentUser"); alert(username+" kicked (session cleared)");}
+function ban(i){users[i].status="banned"; users[i].suspendUntil=null; save();}
+function suspend(i){let mins=prompt("Suspend for how many minutes?"); if(!mins||isNaN(mins))return; users[i].status="suspended"; users[i].suspendUntil=Date.now()+mins*60000; save();}
+function unban(i){users[i].status="active"; users[i].suspendUntil=null; save();}
+
+function render(){
+    if(!users.length){tableWrap.innerHTML="<p>No users found.</p>"; return;}
+    let html=`<table>
+        <tr><th>#</th><th>Username</th><th>Email</th><th>Status</th><th>Actions</th></tr>`;
+    users.forEach((u,i)=>{
+        if(u.status==="suspended" && Date.now()>u.suspendUntil){u.status="active"; u.suspendUntil=null; save();}
+        html+=`<tr>
+            <td>${i+1}</td>
+            <td>${u.username}</td>
+            <td>${u.email}</td>
+            <td class="status-${u.status}">${u.status}${u.suspendUntil?"<br>"+new Date(u.suspendUntil).toLocaleString():""}</td>
+            <td>
+                <button class="kick" onclick="kick('${u.username}')">Kick</button>
+                <button class="suspend" onclick="suspend(${i})">Suspend</button>
+                <button class="ban" onclick="ban(${i})">Ban</button>
+                <button class="unban" onclick="unban(${i})">Unban</button>
+            </td>
+        </tr>`;
+    });
+    html+="</table>";
+    tableWrap.innerHTML=html;
+}
+render();
+
+// ---------- MAINTENANCE ----------
+const maintBtn=document.getElementById("toggleMaintBtn");
+function updateMaintBtn(){const mode=localStorage.getItem("maintenance")==="true"; maintBtn.textContent=mode?"Disable Maintenance":"Enable Maintenance";}
+updateMaintBtn();
+maintBtn.addEventListener("click",()=>{const current=localStorage.getItem("maintenance")==="true"; localStorage.setItem("maintenance",!current); updateMaintBtn();});
+
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.key === "F12") e.preventDefault();
+    
+    // Ctrl+Shift+I (Dev Tools)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') e.preventDefault();
+
+    // Ctrl+Shift+J (Console)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'j') e.preventDefault();
+
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.key.toLowerCase() === 'u') e.preventDefault();
+    
+    // Ctrl+Shift+C (Inspect Element)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') e.preventDefault();
+});
+
+
+
+
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+</script>
+</body>
+</html>

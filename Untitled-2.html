@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Panel</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    body {
+        margin:0;
+        font-family:'Inter',sans-serif;
+        background:linear-gradient(to bottom,#1e1f29,#3a3c4a);
+        height:100vh;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        overflow:hidden;
+        color:#fff;
+        position:relative;
+    }
+    canvas#snow {
+        position:absolute;
+        top:0;left:0;width:100%;height:100%;
+        pointer-events:none;
+        z-index:1;
+    }
+    .login-card {
+        background-color:rgba(44,47,58,0.85);
+        backdrop-filter:blur(10px);
+        border-radius:16px;
+        padding:40px 50px;
+        width:400px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.3);
+        display:flex;
+        flex-direction:column;
+        gap:15px;
+        position:relative;
+        z-index:2;
+    }
+    .login-card h2 {font-size:1.8em;margin-bottom:10px;}
+    .login-card input[type="text"],.login-card input[type="password"] {
+        width:100%;
+        padding:14px;
+        border-radius:12px;
+        border:1px solid #3a3c4a;
+        background-color:#1f2029;
+        color:#fff;
+        font-size:1em;
+        outline:none;
+        transition:all 0.2s ease;
+        box-sizing:border-box;
+    }
+    .login-card input:focus {
+        border-color:#5865F2;
+        box-shadow:0 0 6px rgba(88,101,242,0.5);
+    }
+    .login-card button {
+        padding:14px;
+        border:none;
+        border-radius:12px;
+        background-color:#7A85E5;
+        color:#fff;
+        font-size:1em;
+        font-weight:bold;
+        cursor:pointer;
+        transition:all 0.2s ease;
+    }
+    .login-card button:hover {
+        background-color:#686fd1;
+        transform:scale(1.03);
+    }
+    .login-card .footer {
+        font-size:0.85em;
+        color:#888;
+        text-align:center;
+        margin-top:10px;
+    }
+    .login-card .footer a {color:#5865F2;text-decoration:none;}
+    .discord-logo {
+        position:fixed;
+        bottom:20px;
+        right:20px;
+        width:50px;height:50px;
+        z-index:3;
+        opacity:0.85;
+        transition:opacity 0.2s ease, transform 0.2s ease;
+        cursor:pointer;
+    }
+    .discord-logo:hover {opacity:1;transform:scale(1.1);}
+    .notification {
+        position:fixed;
+        top:20px;
+        right:20px;
+        background-color:#7A85E5;
+        color:#fff;
+        padding:15px 20px;
+        border-radius:12px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.3);
+        font-weight:bold;
+        opacity:0;
+        transform:translateY(-20px);
+        transition:opacity 0.4s ease,transform 0.4s ease;
+        z-index:5;
+    }
+    .notification.show {opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<canvas id="snow"></canvas>
+
+<div class="login-card" id="loginCard">
+    <h2>Login to Your Account</h2>
+    <input type="text" id="loginUsername" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <div class="footer">
+        Don't have an account? <a href="Untitled-3.html">Sign Up</a>
+    </div>
+</div>
+
+<a href="https://discord.gg/sxxze2Cmb8" target="_blank">
+    <img class="discord-logo" src="https://cdn.worldvectorlogo.com/logos/discord-6.svg" alt="Discord Logo">
+</a>
+
+<div id="notification" class="notification"></div>
+
+<script>
+// ---------- Snow ----------
+const canvas=document.getElementById('snow');
+const ctx=canvas.getContext('2d');
+let width=canvas.width=window.innerWidth, height=canvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{width=canvas.width=window.innerWidth; height=canvas.height=window.innerHeight;});
+class Snowflake{constructor(layer){this.layer=layer;this.reset();}reset(){this.x=Math.random()*width; this.y=Math.random()*height; this.radius=(Math.random()*2+1)*this.layer.scale; this.speedY=(Math.random()*1+0.5)*this.layer.speed; this.speedX=Math.random()*0.5-0.25; this.opacity=Math.random()*0.5+0.3;}update(){this.y+=this.speedY; this.x+=this.speedX;if(this.y>height)this.y=-this.radius;if(this.x>width)this.x=0;if(this.x<0)this.x=width;}draw(){ctx.beginPath(); ctx.fillStyle=`rgba(255,255,255,${this.opacity})`; ctx.shadowBlur=this.radius*2; ctx.shadowColor='white'; ctx.arc(this.x,this.y,this.radius,0,Math.PI*2); ctx.fill();}}
+const layers=[{count:80,speed:0.5,scale:0.5},{count:50,speed:1,scale:1},{count:30,speed:1.5,scale:1.5}];
+let snowflakes=[]; layers.forEach(layer=>{for(let i=0;i<layer.count;i++){snowflakes.push(new Snowflake(layer));}});
+(function animate(){ctx.clearRect(0,0,width,height);snowflakes.forEach(f=>{f.update();f.draw();});requestAnimationFrame(animate);})();
+
+// ---------- Notification ----------
+function showNotification(msg){
+    const n=document.getElementById('notification'); 
+    n.textContent=msg; 
+    n.classList.add('show'); 
+    setTimeout(()=>{n.classList.remove('show');},3000);
+}
+
+// ---------- Maintenance Check ----------
+if(localStorage.getItem("maintenance")==="true"){
+    const loginCard=document.getElementById('loginCard');
+    loginCard.innerHTML="<p style='text-align:center;font-size:1.2em;'>The site is under maintenance. Please try again later.</p>";
+}
+
+// ---------- Login Button ----------
+const loginBtn=document.getElementById('loginBtn');
+loginBtn.addEventListener('click',()=>{
+    if(localStorage.getItem("maintenance")==="true"){
+        showNotification("Login disabled: Site is under maintenance.");
+        return;
+    }
+    const username=document.getElementById('loginUsername').value.trim();
+    const password=document.getElementById('loginPassword').value.trim();
+    if(!username || !password){showNotification("Fill in all fields!"); return;}
+
+    // Check users in localStorage
+    let users=JSON.parse(localStorage.getItem("users")||"[]");
+    const user=users.find(u=>u.username.toLowerCase()===username.toLowerCase());
+    if(!user){showNotification("User not found!"); return;}
+    if(user.status==="banned"){showNotification("Your account is banned."); return;}
+    if(user.status==="suspended" && user.suspendUntil && Date.now()<user.suspendUntil){
+        showNotification("Account suspended until "+new Date(user.suspendUntil).toLocaleString());
+        return;
+    }
+
+    // Login success
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    showNotification("Welcome back, "+user.username+"!");
+
+    // Clear input fields
+    document.getElementById('loginUsername').value="";
+    document.getElementById('loginPassword').value="";
+
+    // Redirect to home page
+    setTimeout(()=>{ window.location.href="home.html"; }, 1000);
+});
+
+
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.key === "F12") e.preventDefault();
+    
+    // Ctrl+Shift+I (Dev Tools)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') e.preventDefault();
+
+    // Ctrl+Shift+J (Console)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'j') e.preventDefault();
+
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.key.toLowerCase() === 'u') e.preventDefault();
+    
+    // Ctrl+Shift+C (Inspect Element)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') e.preventDefault();
+});
+
+
+
+
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+</script>
+</body>
+</html>

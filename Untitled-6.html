@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Download</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(to bottom,#1e1f29,#3a3c4a);
+    color:#fff;
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* ---------- TOP BAR ---------- */
+.top-bar-wrapper{
+    position:fixed;
+    top:0; left:0;
+    width:100%;
+    height:70px;
+    transform:translateY(-55px);
+    transition:.35s;
+    z-index:20;
+}
+.top-bar-wrapper:hover{transform:translateY(0);}
+.top-bar{
+    height:70px;
+    background:rgba(30,31,41,.95);
+    backdrop-filter:blur(10px);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 30px;
+}
+.top-bar button{
+    padding:12px 22px;
+    border:none;
+    border-radius:12px;
+    background:#7A85E5;
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
+}
+.top-bar button:hover{
+    background:#5865F2;
+    transform:scale(1.08) rotate(-1deg);
+}
+
+/* ---------- SNOW ---------- */
+canvas#snow{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+}
+
+/* ---------- MAIN ---------- */
+main{
+    display:flex;
+    justify-content:center;
+    padding:140px 20px;
+    position:relative;
+    z-index:1;
+}
+.panel{
+    background:rgba(44,47,58,.85);
+    backdrop-filter:blur(12px);
+    border-radius:16px;
+    width:340px;
+    padding:30px;
+    text-align:center;
+    box-shadow:0 0 25px rgba(88,101,242,.6);
+}
+.panel input{
+    width:90%;
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    background:#1f2029;
+    color:#fff;
+    margin-bottom:15px;
+}
+.panel button{
+    padding:14px 25px;
+    border:none;
+    border-radius:12px;
+    background:#7A85E5;
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
+}
+.panel button:hover{
+    background:#5865F2;
+    transform:scale(1.08);
+}
+
+/* ---------- STATES ---------- */
+.box{
+    display:none;
+    margin-top:15px;
+    padding:15px;
+    border-radius:12px;
+    font-weight:600;
+    text-align:center;
+}
+.warning{background:#ff6d6d;}
+.maint{background:#ff6d6d;}
+.status div{opacity:.3;margin:5px 0;}
+.status .active{opacity:1;color:#6dff8b;}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar-wrapper">
+    <div class="top-bar">
+        <div class="left-buttons">
+<button onclick="window.location.href='home.html'">Home</button>
+<button onclick="window.location.href='Untitled-5.html'">Discord Id Lookup</button>
+<button onclick="window.location.href='Untitled-6.html'">Downloads</button>
+        </div>
+        <div id="topRightButtons">
+<button onclick="window.location.href='Untitled-3.html'">Sign Up</button>
+<button onclick="window.location.href='Untitled-4.html'">Login</button>
+        </div>
+    </div>
+</div>
+
+
+<canvas id="snow"></canvas>
+
+<main>
+    <div class="panel">
+
+        <div id="maintenanceBox" class="box maint">
+            🚧 Maintenance Mode Active<br>Please try again later.
+        </div>
+
+        <h3>Advanced Secure Download</h3>
+        <input id="keyInput" placeholder="Enter Access Key">
+        <button id="authBtn" onclick="authenticate()">Authenticate</button>
+
+        <div id="error" class="box warning">❌ Invalid Key</div>
+
+        <div id="warning" class="box warning">
+            ⚠ This site may be dangerous.<br><br>
+            <button onclick="continueDownload()">Continue</button>
+        </div>
+
+        <div id="statusBox" class="box status">
+            <div id="s1">🔐 Authenticating key...</div>
+            <div id="s2">🧪 Checking status...</div>
+            <div id="s3">⏳ Verifying time...</div>
+            <div id="s4">✅ Authorized</div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+// ---------- USER PROFILE DISPLAY ----------
+function updateTopBar(){
+    const currentUser = localStorage.getItem("currentUser");
+    const topRight = document.getElementById("topRightButtons");
+    if(currentUser){
+        topRight.innerHTML = `
+            <div style="position:relative;">
+                <button id="profileBtn">${currentUser} ▼</button>
+                <div id="profileDropdown" style="display:none;position:absolute;right:0;top:35px;background:rgba(44,47,58,0.95);backdrop-filter:blur(10px);padding:10px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.4);">
+                    <button id="logoutBtn" style="background:#ff6d6d;color:#fff;width:100%;">Logout</button>
+                </div>
+            </div>
+        `;
+        const profileBtn = document.getElementById("profileBtn");
+        const profileDropdown = document.getElementById("profileDropdown");
+        profileBtn.addEventListener("click",()=>{profileDropdown.style.display = profileDropdown.style.display==="none"?"block":"none";});
+        document.getElementById("logoutBtn").addEventListener("click",()=>{
+            localStorage.removeItem("currentUser");
+            location.reload();
+        });
+    }
+}
+updateTopBar();
+
+// ---------- KEYS → LINKS ----------
+const KEY_LINKS={
+ "FivemExecutor-QPL9-X7W2-ZKMA-AD18":"https://gofile.io/d/q3MAAU",
+ "Fivem Exesternal-GAMMA-J9WQ-PLK8-3D0A-MX2R":"https://gofile.io/d/yT4Wgo",
+ "Cs2 Exesternal-DELTA-88QW-LM2Z-9XK1-T7AP":"https://gofile.io/d/xvu1ei",
+ " Roblox Exesternal-1ZRM-W8K2-77PA":"https://gofile.io/d/zGB2i0",
+ "Roblox Executor-ALPHA-9XQ2-KL8M-7TDP-92LX":"https://gofile.io/d/EF4RUi",
+ "Fivem HWID SPOOFER-0PLX-92QW-K7ZM-D8RA":"https://gofile.io/d/uWr0a2",
+ "Mac/Arp/SystemCheckerspoofer-FALCON-7QZP-1KLM-XW92-8ADT":"https://gofile.io/d/2jxPo2",
+ "System Checker-ECHO-PL9X-0QW2-ZMK8-7DLA":"https://gofile.io/d/A71jph",
+ "Windows Activator-LYNX-PLX9-QW72-ZKMA-8TDR":"https://gofile.io/d/W5UVxH",
+ "Ida Pro-PL92-XQW7-ZKAM-18TD":"https://mega.nz/file/iYwGSLTK#qTdw9eHoI4X_8CijBbfRc2lGRGOPAxg28ipk2fMR0gk",
+ "Boosterx":"https://gofile.io/d/eiRBTi?token=794aa775-4157-4757-b62c-ed117a34f13e",
+ "Q91L-XZP2-AKM8":"https://example.com/file12.exe",
+ "PL9K-21XA-QZ8":"https://example.com/file13.exe",
+ "ZXQ9-PL82-KA1M":"https://example.com/file14.exe",
+ "QZ82-PLKM-XA19":"https://example.com/file15.exe",
+ "91QK-PLZX-A2M8":"https://example.com/file16.exe",
+ "XKQ9-82PL-AMZ1":"https://example.com/file17.exe",
+ "PLZ9-KQX8-21AM":"https://example.com/file18.exe",
+ "QPL9-XK82-AMZ1":"https://example.com/file19.exe",
+ "KX91-QZPL-AM28":"https://example.com/file20.exe",
+ "AX29-QPLK-ZM81":"https://example.com/file21.exe",
+ "QKPL-821Z-AMX9":"https://example.com/file22.exe",
+ "ZP91-QLKA-82MX":"https://example.com/file23.exe",
+ "PLKA-Q91Z-XM28":"https://example.com/file24.exe",
+ "8ZPL-QK91-AMX2":"https://example.com/file25.exe",
+ "XQPL-82KA-ZM19":"https://example.com/file26.exe",
+ "KPLQ-ZA91-82XM":"https://example.com/file27.exe",
+ "QZPL-X91A-KM28":"https://example.com/file28.exe",
+ "PLQX-KZ91-AM28":"https://example.com/file29.exe",
+ "91PL-QKZX-AM28":"https://example.com/file30.exe"
+};
+let selectedLink=null;
+
+// ---------- MAINTENANCE ----------
+function checkMaintenance(){
+ const m=localStorage.getItem("maintenance")==="true";
+ document.getElementById("maintenanceBox").style.display=m?"block":"none";
+ document.getElementById("authBtn").disabled=m;
+}
+checkMaintenance();
+window.addEventListener("storage",checkMaintenance);
+
+// ---------- AUTHENTICATE ----------
+function authenticate(){
+ if(localStorage.getItem("maintenance")==="true") return;
+ const k=keyInput.value.trim();
+ error.style.display="none";
+ warning.style.display="none";
+ statusBox.style.display="none";
+
+ if(!KEY_LINKS[k]){
+  error.style.display="block";return;
+ }
+ selectedLink=KEY_LINKS[k];
+ warning.style.display="block";
+}
+
+// ---------- CONTINUE ----------
+function continueDownload(){
+ warning.style.display="none";
+ statusBox.style.display="block";
+ ["s1","s2","s3","s4"].forEach((id,i)=>{
+  setTimeout(()=>{document.getElementById(id).classList.add("active");
+   if(i===3) setTimeout(()=>location.href=selectedLink,1200);
+  },i*1200);
+ });
+}
+
+// ---------- SNOW (ORIGINAL LAYERED) ----------
+const canvas=document.getElementById('snow');
+const ctx=canvas.getContext('2d');
+let width=canvas.width=window.innerWidth;
+let height=canvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;});
+
+class Snowflake{
+ constructor(layer){this.layer=layer;this.reset();}
+ reset(){
+  this.x=Math.random()*width;
+  this.y=Math.random()*height;
+  this.radius=(Math.random()*2+1)*this.layer.scale;
+  this.speedY=(Math.random()*1+0.5)*this.layer.speed;
+  this.speedX=Math.random()*0.5-0.25;
+  this.opacity=Math.random()*0.5+0.3;
+ }
+ update(){
+  this.y+=this.speedY;
+  this.x+=this.speedX;
+  if(this.y>height)this.y=-this.radius;
+  if(this.x>width)this.x=0;
+  if(this.x<0)this.x=width;
+ }
+ draw(){
+  ctx.beginPath();
+  ctx.fillStyle=`rgba(255,255,255,${this.opacity})`;
+  ctx.shadowBlur=this.radius*2;
+  ctx.shadowColor='white';
+  ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
+  ctx.fill();
+ }
+}
+
+const layers=[{count:80,speed:0.5,scale:0.5},{count:50,speed:1,scale:1},{count:30,speed:1.5,scale:1.5}];
+let snowflakes=[];
+layers.forEach(layer=>{for(let i=0;i<layer.count;i++) snowflakes.push(new Snowflake(layer));});
+
+(function animate(){
+ ctx.clearRect(0,0,width,height);
+ snowflakes.forEach(f=>{f.update();f.draw();});
+ requestAnimationFrame(animate);
+})();
+
+
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.key === "F12") e.preventDefault();
+    
+    // Ctrl+Shift+I (Dev Tools)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') e.preventDefault();
+
+    // Ctrl+Shift+J (Console)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'j') e.preventDefault();
+
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.key.toLowerCase() === 'u') e.preventDefault();
+    
+    // Ctrl+Shift+C (Inspect Element)
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') e.preventDefault();
+});
+
+
+
+
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+
+
+
+
+</script>
+
+</body>
+</html>
+
